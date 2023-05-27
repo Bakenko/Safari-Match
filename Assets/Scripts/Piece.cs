@@ -1,8 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;  //05.1 - libreria de dotween
 
 //04 - Instanciando las piezas en la cuadrícula
+//05 - Moviendo las piezas
 public class Piece : MonoBehaviour
 {
     public int x;       //04.1 - propiedad para la coordenada x
@@ -30,5 +32,20 @@ public class Piece : MonoBehaviour
         x = x_;
         y = y_;
         board = board_;
+    }
+
+    public void Move(int desX, int desY)        //05.2 - movimiento de la pieza
+    {
+        transform.DOMove(new Vector3(desX, desY, -5f), 0.25f).SetEase(Ease.InOutCubic).onComplete = () =>   //05.2.1 - SetEase suaviza el movimiento y onComplete actualiza las posicion de la piezas despues del movimiento
+        {
+            x = desX;
+            y = desY;
+        };
+    }
+
+    [ContextMenu("Test Move")]      //05.3 - Decorador
+    public void MoveTest()      //05.4 - funcion de test para poder verlo dentro de Unity
+    {
+        Move(0, 0);
     }
 }
