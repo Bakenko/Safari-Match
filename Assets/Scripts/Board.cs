@@ -7,6 +7,7 @@ using UnityEngine;
 //01 - Creando la cuadricula
 //02 - Ajustando la camara
 //03 - Sistema de coordenadas para instanciar las piezas
+//04 - Instanciando las piezas en la cuadrícula
 
 public class Board : MonoBehaviour
 {
@@ -17,12 +18,29 @@ public class Board : MonoBehaviour
     public float cameraSizeOffset;  //02.2 - agregar un numero al tamaño ortografico final de la camara (se agrega a 02.1.6)
     public float cameraVerticalOffset;  //02.3 - permite agregar un valor a la posicion en vertical de la camara (se agrega a 02.1.3)
 
+    public GameObject[] availablePieces;    //04.7 - son las piezas que van a estar disponibles para ser creadas en la cuadricula
+
         
     // Start is called before the first frame update
     void Start()
     {
         SetupBoard();               //se llama la funcion encargada de crear la cuadricula
         PositionCamera();           //se llama la funcion encargada de ajustar la camara
+        SetupPieces();              //se llama la funcion encargada poner las piezas en cada una de las posiciones de la cuadricula
+    }
+
+    private void SetupPieces()      //04.8 - funcion encargada de poner las piezas en cada una de las posiciones de la cuadricula
+    {
+        for (int x = 0; x < width; x++)  //04.8.1 - ancho de la cuadricula
+        {
+            for (int y = 0; y < height; y++) //04.8.1.1 - alto de la cuadricula
+            {
+                var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)];   //04.8.1.1.2 - selecciona de manera aleatoria una de las piezas
+                var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity);    //04.8.1.1.3 - creamos nuestros objetos
+                o.transform.parent = transform;     //04.8.1.1.4 - hacer que el padre del objeto sea la board
+                o.GetComponent<Piece>()?.Setup(x, y, this);  //04.8.1.1.5 - para tener acceso al componente de tipo piece y llamar la funcion Setup
+            }
+        }
     }
 
     private void PositionCamera()   //02.1 - funcion encargada de ajustar la camara
@@ -44,9 +62,9 @@ public class Board : MonoBehaviour
         {
             for(int y = 0; y < height; y++) //01.4.1.1 - alto de la cuadricula
             {
-                var o = Instantiate(tileObject, new Vector3(x, y, -5), Quaternion.identity);    //01.4.1.1.2 - cremos nuestros objetos
+                var o = Instantiate(tileObject, new Vector3(x, y, -5), Quaternion.identity);    //01.4.1.1.2 - creamos nuestros objetos
                 o.transform.parent = transform;     //01.4.1.1.3 - hacer que el padre del objeto sea la board
-                o.GetComponent<Tile>()?.Setup(x, y, this);  //03.5 - para tener acceso al componente de tipo tile y llamar la funcion setup
+                o.GetComponent<Tile>()?.Setup(x, y, this);  //03.5 - para tener acceso al componente de tipo tile y llamar la funcion Setup
             }
         }
     }
