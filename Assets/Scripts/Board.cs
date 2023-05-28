@@ -10,6 +10,7 @@ using UnityEngine;
 //04 - Instanciando las piezas en la cuadrícula
 //06 - Intercambiando las piezas de lugar
 //07 - Permitiendo solo ciertos tipos de movimientos
+//08 - Creando las funciones del match 3
 
 public class Board : MonoBehaviour
 {
@@ -129,4 +130,41 @@ public class Board : MonoBehaviour
         }
         return false;
     }
+
+    public List<Piece> GetMatchByDirection(int xpos, int ypos, Vector2 direction, int minPieces = 3)    //08.1 - funcion que detecta los matches en una sola direccion
+    {
+        List<Piece> matches = new List<Piece>();     //08.1.1 - crea la lista de piezas de match que vamos a devolver
+        Piece startPiece = Pieces[xpos, ypos];       //08.1.2 - encontrar la pieza inicial donde comenzara el match
+        matches.Add(startPiece);                     //08.1.3 - agregamos la pieza inicial
+
+        int nextX;      //08.1.4 - posicion en la que vamos a buscar una pieza
+        int nextY;      //08.1.5 - posicion en la que vamos a buscar una pieza
+        int maxVal = width>height? width:height;        //08.1.6 - cual es el valor maximo al que podemos llegar antes de salinor de la cuadricula
+
+        for (int i = 1; i < maxVal; i++)     ////08.1.7 - para iterar en la direccion que hemos escogido
+        {
+            nextX = xpos + ((int)direction.x * i);      //08.1.7.1 - se asignan los valores para mi proxima posicion en x que es donde voy a buscar si esa pieza es del mismo tipo que la anterior
+            nextY = ypos + ((int)direction.y * i);      //08.1.7.2 - se asignan los valores para mi proxima posicion en y que es donde voy a buscar si esa pieza es del mismo tipo que la anterior
+
+            if (nextX >= 0 && nextX < width && nextY >= 0 && nextY < height)      //08.1.7.3 - nos aseguramos que las posiciones anteriores sean mayores que 0 y menores que el ancho y el alto respectivamente
+            {
+                var nextPiece = Pieces[nextX, nextY];       //08.1.7.3.1 - obtenemos la referencia al a proxima pieza
+                if (nextPiece != null && nextPiece.pieceType == startPiece.pieceType)      //08.1.7.3.2 - verificamos si esa proxima posicion tiene el mismo tipo de nuestra pieza inicial
+                {
+                    matches.Add(nextPiece);     //08.1.7.3.2.1 - agregamos la nueva pieza
+                }
+                else        //08.7.3.3 - si la tipo de la pieza no coincide se rompe el loop
+                {
+                    break;      //08.7.3.3.1 - se rompe
+                }
+            }
+        }
+        if(matches.Count >= minPieces)      //08.1.8 - verificamos si la cantidad de matches es mayor o igual a la cantidad minima de piezas
+        {
+            return matches;     //08.1.8.1 - devolvemos lo matches que encontramos
+        }
+        return null;        //08.1.9 - no devolvamos nada si no encontramos lo indicado
+    }
+
+
 }
