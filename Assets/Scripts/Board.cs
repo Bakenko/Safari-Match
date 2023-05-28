@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;      //08.3 - se agrega para poder usar la funcion "union"
 using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
@@ -166,5 +167,35 @@ public class Board : MonoBehaviour
         return null;        //08.1.9 - no devolvamos nada si no encontramos lo indicado
     }
 
+    public List<Piece> GetMatchByPiece(int xpos, int ypos, int minPieces = 3)       //08.2 - esta funcion utilizara la funcion "GetMatchByDirection" para buscar matches en las 4 direcciones
+    {
+        //08.2.1 -  se utilizara la funcion "GetMatchByDirection" para cada una de las direcciones
+        var upMatchs = GetMatchByDirection(xpos, ypos, new Vector2(0, 1), 2);      //08.2.1.1 - busca piezas hacia arriba
+        var downMatchs = GetMatchByDirection(xpos, ypos, new Vector2(0, -1), 2);   //08.2.1.2 - busca piezas hacia abajo
+        var rightMatchs = GetMatchByDirection(xpos, ypos, new Vector2(1, 0), 2);   //08.2.1.3 - busca piezas hacia la derecha
+        var leftMatchs = GetMatchByDirection(xpos, ypos, new Vector2(-1, 0), 2);   //08.2.1.4 - busca piezas hacia la izquierda
 
+        //08.2.3 - inicializamos las variables con listas vacias en caso de que retornen valores nulos
+        if (upMatchs != null) upMatchs = new List<Piece>();
+        if (downMatchs != null) downMatchs = new List<Piece>();
+        if (rightMatchs != null) rightMatchs = new List<Piece>();
+        if (leftMatchs != null) leftMatchs = new List<Piece>();
+
+        //08.2.4 - vamos a unir las listas que recibimos por medio de una funcion llamada "union"
+        var verticalMatches = upMatchs.Union(downMatchs).ToList();          //08.2.4.1 - unimos las listas verticales "upMatch + downMatch" como nos devuelve un arrey los convertimos a un lista "ToList"
+        var horizontalMatches = leftMatchs.Union(rightMatchs).ToList();     //08.2.4.2 - unimos las listas horizontales "leftMatch + rightMatch" como nos devuelve un arrey los convertimos a un lista "ToList"
+
+        var foundMatches = new List<Piece>();       //08.2.5 - creamos un lista que junte todos los matches que encontramos
+
+        //08.2.6 - verificar si encontramos suficientes verticalMatches y suficientes horizontalMatches para contarlos dentro de los matches que vamos a devovler
+        if(verticalMatches.Count >= minPieces)      //08.2.6.1 - se verifican los matches verticales
+        {
+            foundMatches = foundMatches.Union(verticalMatches).ToList();        //08.2.6.1.1 - unimos los matches en una lista
+        }
+        if (horizontalMatches.Count >= minPieces)      //08.2.6.2 - se verifican los matches verticales
+        {
+            foundMatches = foundMatches.Union(horizontalMatches).ToList();        //08.2.6.2.1 - unimos los matches en una lista
+        }
+        return foundMatches;        //08.2.7 - retornamos los foundMatches ya sea que encontremos o no
+    }
 }
