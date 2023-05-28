@@ -9,6 +9,7 @@ using UnityEngine;
 //03 - Sistema de coordenadas para instanciar las piezas
 //04 - Instanciando las piezas en la cuadrícula
 //06 - Intercambiando las piezas de lugar
+//07 - Permitiendo solo ciertos tipos de movimientos
 
 public class Board : MonoBehaviour
 {
@@ -95,7 +96,7 @@ public class Board : MonoBehaviour
 
     public void TileUp(Tile tile_)      //06.9 - Funcion para cuando levanto el click
     {
-        if(startTile != null && endTile != null)    //06.9.1 - verifica que tengamos un starTile y un endTile
+        if(startTile != null && endTile != null && IsCloseTo(startTile, endTile))    //06.9.1 - verifica que tengamos un starTile y un endTile
         {
             SwapTiles();    //se llama la funcion encargada de actializar la funcion del sistema de coordenadas [,] y de llamar la funcion de Move
         }
@@ -115,5 +116,17 @@ public class Board : MonoBehaviour
         //06.10.5 - actualiza el sistema de coordenadas de las piezas que se movieron
         Pieces[startTile.x, startTile.y] = EndPiece;
         Pieces[endTile.x, endTile.y] = StartPiece;
+    }
+
+    public bool IsCloseTo(Tile start, Tile end)     //07.1 - esta funcion retorna un valor booleano y se agrega a 06.9.1
+    {
+        if(Math.Abs((start.x-end.x))==1 && start.y == end.y){       //07.1.1 - verificacion horizontal
+            return true;
+        }
+        if (Math.Abs((start.y - end.y)) == 1 && start.x == end.x)   //07.1.2 - verificacion vertical
+        {
+            return true;
+        }
+        return false;
     }
 }
