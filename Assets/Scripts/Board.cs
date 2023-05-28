@@ -13,6 +13,7 @@ using UnityEngine;
 //07 - Permitiendo solo ciertos tipos de movimientos
 //08 - Creando las funciones del match 3
 //09 - Usando el match 3 en nuestro juego
+//10 - Eliminando los matches por defecto
 
 public class Board : MonoBehaviour
 {
@@ -47,18 +48,55 @@ public class Board : MonoBehaviour
 
     private void SetupPieces()      //04.8 - funcion encargada de poner las piezas en cada una de las posiciones de la cuadricula
     {
+        int maxIterations = 50;     //10.5 - agragamos las variables para iterar la piezas
+        int currentIteration = 0;   //10.6 - agragamos las variables para iterar las piezas
+
         for (int x = 0; x < width; x++)  //04.8.1 - ancho de la cuadricula
         {
             for (int y = 0; y < height; y++) //04.8.1.1 - alto de la cuadricula
             {
-                var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)];   //04.8.1.1.2 - selecciona de manera aleatoria una de las piezas
+                //10.1 - se requiere una funcion a parte para crear las piezas por lo que se elimina de aqui
+                /*var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)];   //04.8.1.1.2 - selecciona de manera aleatoria una de las piezas
                 var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity);    //04.8.1.1.3 - creamos nuestros objetos
                 o.transform.parent = transform;     //04.8.1.1.4 - hacer que el padre del objeto sea la board
                 // o.GetComponent<Piece>()?.Setup(x, y, this);  //04.8.1.1.5 - para tener acceso al componente de tipo piece y llamar la funcion Setup
                 Pieces[x, y] = o.GetComponent<Piece>(); //06.5 - se guarda la referencaia al componente de Piece que se acaba de crear dentro del arrey de 2 dimensiones de Pieces
-                Pieces[x, y].Setup(x, y, this);     //06.6 - se accede al componente que acabamos de guardar
+                Pieces[x, y].Setup(x, y, this);     //06.6 - se accede al componente que acabamos de guardar*/
+
+                currentIteration = 0;
+
+                var newPiece = CreatePieceAt(x,y);     //10.3 - llamamos la funcion para crear las piezas
+
+                while(HasPreviousMatches(x, y))     //10.7 - despues de crear la pieza (10.3) debemos verificar si tiene previous matches
+                {
+                    ClearPieceAt(x, y);     //10.7.1 - se llama la funcion para destruir la pieza
+                    newPiece = CreatePieceAt(x, y);     //10.7.2 - se crea una nueva pieza
+                    currentIteration++;     //10.7.3 - hace que las iteraciones aumenten
+                    if(currentIteration > maxIterations)        //10.7.4 - si iteracion actual es mayor a la catidad maxima de iteraciones deberiamos romper el while
+                    {
+                        break;      //10.7.4.1 - se rompe el while loop
+                    }
+                }
             }
         }
+    }
+
+    private void ClearPieceAt(int x, int y)     //10.8 - funcion para borra la pieza del previous matches
+    {
+        var pieceToClear = Pieces[x,y];        //10.8.1 - obtenemos la referencia
+        Destroy(pieceToClear.gameObject);      //10.8.2 - destruimos el gameobject
+        Pieces[x, y] = null;                   //10.8.3 - actualizamos el arrey de dos dimensiones de piezas
+        
+    }
+
+    private Piece CreatePieceAt(int x, int y)       //10.2 - se crea una funcion nueva para crear las piezas
+    {
+        var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)];   //04.8.1.1.2 - selecciona de manera aleatoria una de las piezas
+        var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity);    //04.8.1.1.3 - creamos nuestros objetos
+        o.transform.parent = transform;     //04.8.1.1.4 - hacer que el padre del objeto sea la board
+        Pieces[x, y] = o.GetComponent<Piece>(); //06.5 - se guarda la referencaia al componente de Piece que se acaba de crear dentro del arrey de 2 dimensiones de Pieces
+        Pieces[x, y].Setup(x, y, this);     //06.6 - se accede al componente que acabamos de guardar
+        return Pieces[x, y];        //10.2.1 - retornamos la pieza que esta en esa posicion "x" y "y"
     }
 
     private void PositionCamera()   //02.1 - funcion encargada de ajustar la camara
@@ -133,15 +171,17 @@ public class Board : MonoBehaviour
         startMatches.ForEach(piece =>       //09.2.5 - para marcar cada match que encontramos como true, la destruimos y actualizamos el sitema de coordenadas
         {
             foundMatch = true;      //09.2.5.1 - marca el match como true
-            Pieces[piece.x, piece.y] = null;        //09.2.5.2 - actualizamos el arrey de dos dimensiones de piezas
-            Destroy(piece.gameObject);      //09.2.5.3 - destruimos el gameobjecto
+            //Pieces[piece.x, piece.y] = null;        //09.2.5.2 - actualizamos el arrey de dos dimensiones de piezas
+            //Destroy(piece.gameObject);      //09.2.5.3 - destruimos el gameobjecto
+            ClearPieceAt(piece.x, piece.y);     //10.9 - reemplazamos las dos lineas anterioes (09.2.5.2 y 09.2.5.3) por esta funcion para evitar el codigo repetido
         });
 
         endMatches.ForEach(piece =>       //09.2.6 - para marcar cada match que encontramos como true, la destruimos y actualizamos el sitema de coordenadas
         {
             foundMatch = true;      //09.2.6.1 - marca el match como true
-            Pieces[piece.x, piece.y] = null;        //09.2.6.2 - actualizamos el arrey de dos dimensiones de piezas
-            Destroy(piece.gameObject);      //09.2.6.3 - destruimos el gameobjecto
+            //Pieces[piece.x, piece.y] = null;        //09.2.6.2 - actualizamos el arrey de dos dimensiones de piezas
+            //Destroy(piece.gameObject);      //09.2.6.3 - destruimos el gameobjecto
+            ClearPieceAt(piece.x, piece.y);     //10.9 - reemplazamos las dos lineas anterioes (09.2.6.2 y 09.2.6.3) por esta funcion para evitar el codigo repetido
         });
 
         if (!foundMatch)    //09.2.7 - si no encontramos ningun foundmatch reiniciamos las piezas que se movieron
@@ -170,6 +210,17 @@ public class Board : MonoBehaviour
             return true;
         }
         return false;
+    }
+
+    bool HasPreviousMatches(int posx, int posy)     //10.4 - funcion para impedir que se creen matches por defecto al iniciar la partida
+    {
+        var downMatches = GetMatchByDirection(posx, posy, new Vector2(0, -1), 2);   //10.4.1 - se buscan matches hacia abajo
+        var leftMatches = GetMatchByDirection(posx, posy, new Vector2(-1, 0), 2);   //10.4.2 - se buscan marches hacia la izquierda
+
+        if(downMatches == null) downMatches = new List<Piece>();        //10.4.3 - si tenemos listas nulas hacia abajo las inicializamos
+        if(leftMatches == null) leftMatches = new List<Piece>();        //10.4.4 - si tenemos listas nulas hacia la izquierda las inicializamos
+
+        return(downMatches.Count > 0 || leftMatches.Count > 0);     //10.4.5 - retornamos verdadero si encontramos algun match
     }
 
     public List<Piece> GetMatchByDirection(int xpos, int ypos, Vector2 direction, int minPieces = 3)    //08.1 - funcion que detecta los matches en una sola direccion
@@ -237,5 +288,5 @@ public class Board : MonoBehaviour
             foundMatches = foundMatches.Union(horizontalMatches).ToList();        //08.2.6.2.1 - unimos los matches en una lista
         }
         return foundMatches;        //08.2.7 - retornamos los foundMatches ya sea que encontremos o no
-    }    
+    }
 }
