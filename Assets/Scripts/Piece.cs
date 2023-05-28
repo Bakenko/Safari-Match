@@ -5,6 +5,7 @@ using DG.Tweening;  //05.1 - libreria de dotween
 
 //04 - Instanciando las piezas en la cuadrícula
 //05 - Moviendo las piezas
+
 public class Piece : MonoBehaviour
 {
     public int x;       //04.1 - propiedad para la coordenada x
