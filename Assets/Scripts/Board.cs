@@ -12,6 +12,7 @@ using UnityEngine;
 //06 - Intercambiando las piezas de lugar
 //07 - Permitiendo solo ciertos tipos de movimientos
 //08 - Creando las funciones del match 3
+//09 - Usando el match 3 en nuestro juego
 
 public class Board : MonoBehaviour
 {
@@ -29,6 +30,8 @@ public class Board : MonoBehaviour
 
     Tile startTile;     //06.10 - espacio inicial(iniciamos movimiento)
     Tile endTile;       //06.11 - espacion final(terminamos movimiento)
+
+    bool swappingPieces = false;    //09.1 - sirve para evitar que tratemos de hacer o buscar dos matches al mismo tiempo o mover dos piezas de seguido
 
     // Start is called before the first frame update
     void Start()
@@ -100,14 +103,16 @@ public class Board : MonoBehaviour
     {
         if(startTile != null && endTile != null && IsCloseTo(startTile, endTile))    //06.9.1 - verifica que tengamos un starTile y un endTile
         {
-            SwapTiles();    //se llama la funcion encargada de actializar la funcion del sistema de coordenadas [,] y de llamar la funcion de Move
+            //SwapTiles();    //se llama la funcion encargada de actializar la funcion del sistema de coordenadas [,] y de llamar la funcion de Move
+            StartCoroutine(SwapTiles());        //cambiamos la forma de de llamar ya que ahora es una coroutina
         }
         //06.9.2 - se reinician los valores despues del movimiento
-        startTile = null;
-        endTile = null;
+        //startTile = null; //09 se lleva a SwapTiles a 09.2.8
+        //endTile = null;   //09 se lleva a SwapTiles a 09.2.8
     }
 
-    private void SwapTiles()    //06.10 - actializa la funcion del sistema de coordenadas [,] y de llamar la funcion de Move
+    //private void SwapTiles()    //06.10 - actializa la funcion del sistema de coordenadas [,] y de llamar la funcion de Move
+    IEnumerator SwapTiles()     //09.2 - la cambiamos porque ahora necesitamos que mueva las piezas y espere a que las piezas terminen de moverse, busque los matches y envie el resultado, si no fuera IEnumerator todo pasaria instantaneamente y el jugador no podria verlo
     {
         var StartPiece = Pieces[startTile.x, startTile.y];  //06.10.1 - referencia a la pieza inicial
         var EndPiece = Pieces[endTile.x, endTile.y];        //06.10.2 - referencia a la pieza final
@@ -118,6 +123,41 @@ public class Board : MonoBehaviour
         //06.10.5 - actualiza el sistema de coordenadas de las piezas que se movieron
         Pieces[startTile.x, startTile.y] = EndPiece;
         Pieces[endTile.x, endTile.y] = StartPiece;
+
+        yield return new WaitForSeconds(0.6f);      //09.2.1 - despues de ejecutarse lo anterior esperar 0.6 segundos para continuar
+
+        bool foundMatch = false;       //09.2.2 - sirve para marcar si llegamos a encontrar matches
+        var startMatches = GetMatchByPiece(startTile.x, startTile.y, 3);    //09.2.3 - para encontar los matches de nuestra pieza inicial
+        var endMatches = GetMatchByPiece(endTile.x, endTile.y, 3);    //09.2.4 - para encontar los matches de nuestra pieza final
+
+        startMatches.ForEach(piece =>       //09.2.5 - para marcar cada match que encontramos como true, la destruimos y actualizamos el sitema de coordenadas
+        {
+            foundMatch = true;      //09.2.5.1 - marca el match como true
+            Pieces[piece.x, piece.y] = null;        //09.2.5.2 - actualizamos el arrey de dos dimensiones de piezas
+            Destroy(piece.gameObject);      //09.2.5.3 - destruimos el gameobjecto
+        });
+
+        endMatches.ForEach(piece =>       //09.2.6 - para marcar cada match que encontramos como true, la destruimos y actualizamos el sitema de coordenadas
+        {
+            foundMatch = true;      //09.2.6.1 - marca el match como true
+            Pieces[piece.x, piece.y] = null;        //09.2.6.2 - actualizamos el arrey de dos dimensiones de piezas
+            Destroy(piece.gameObject);      //09.2.6.3 - destruimos el gameobjecto
+        });
+
+        if (!foundMatch)    //09.2.7 - si no encontramos ningun foundmatch reiniciamos las piezas que se movieron
+        {
+            StartPiece.Move(startTile.x, startTile.y);          //09.2.7.1 - movemos la pieza de inicio a la posicion inicial
+            EndPiece.Move(endTile.x, endTile.y);                //09.2.7.2 - movemos la pieza final a la posicion final
+            Pieces[startTile.x, startTile.y] = StartPiece;      //09.2.7.3 - reiniciamos el cambio que hicimos en nuestro arrey de piezas
+            Pieces[endTile.x, endTile.y] = EndPiece;            //09.2.7.4 - reiniciamos el cambio que hicimos en nuestro arrey de piezas
+        }
+
+        //09.2.8 - se reinician los valores despues del movimiento
+        startTile = null;
+        endTile = null;
+        swappingPieces = false;     //09.2.8.1 - le damos el valor de falso porque ya terminamos de hacer el intercambio de piezas
+
+        yield return null;      //09.2.9 - para romper con esta coroutina
     }
 
     public bool IsCloseTo(Tile start, Tile end)     //07.1 - esta funcion retorna un valor booleano y se agrega a 06.9.1
@@ -176,10 +216,10 @@ public class Board : MonoBehaviour
         var leftMatchs = GetMatchByDirection(xpos, ypos, new Vector2(-1, 0), 2);   //08.2.1.4 - busca piezas hacia la izquierda
 
         //08.2.3 - inicializamos las variables con listas vacias en caso de que retornen valores nulos
-        if (upMatchs != null) upMatchs = new List<Piece>();
-        if (downMatchs != null) downMatchs = new List<Piece>();
-        if (rightMatchs != null) rightMatchs = new List<Piece>();
-        if (leftMatchs != null) leftMatchs = new List<Piece>();
+        if (upMatchs == null) upMatchs = new List<Piece>();
+        if (downMatchs == null) downMatchs = new List<Piece>();
+        if (rightMatchs == null) rightMatchs = new List<Piece>();
+        if (leftMatchs == null) leftMatchs = new List<Piece>();
 
         //08.2.4 - vamos a unir las listas que recibimos por medio de una funcion llamada "union"
         var verticalMatches = upMatchs.Union(downMatchs).ToList();          //08.2.4.1 - unimos las listas verticales "upMatch + downMatch" como nos devuelve un arrey los convertimos a un lista "ToList"
@@ -197,5 +237,5 @@ public class Board : MonoBehaviour
             foundMatches = foundMatches.Union(horizontalMatches).ToList();        //08.2.6.2.1 - unimos los matches en una lista
         }
         return foundMatches;        //08.2.7 - retornamos los foundMatches ya sea que encontremos o no
-    }
+    }    
 }
