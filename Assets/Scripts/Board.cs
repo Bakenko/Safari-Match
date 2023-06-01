@@ -14,6 +14,7 @@ using UnityEngine;
 //09 - Usando el match 3 en nuestro juego
 //10 - Eliminando los matches por defecto
 //11 - Colapsando las piezas
+//12 - Match 3 combo
 
 public class Board : MonoBehaviour
 {
@@ -154,14 +155,14 @@ public class Board : MonoBehaviour
     {
         var StarPiece = Pieces[startTile.x, startTile.y];  //06.10.1 - referencia a la pieza inicial
         var EndPiece = Pieces[endTile.x, endTile.y];        //06.10.2 - referencia a la pieza final
-
+        
         StarPiece.Move(endTile.x, endTile.y);      //06.10.3 - mueve la pieza inicial a la posicion final
         EndPiece.Move(startTile.x, startTile.y);    //06.10.4 - mueve la pieza final a la posicion inicial
-
+                
         //06.10.5 - actualiza el sistema de coordenadas de las piezas que se movieron
         Pieces[startTile.x, startTile.y] = EndPiece;
         Pieces[endTile.x, endTile.y] = StarPiece;
-
+        
         yield return new WaitForSeconds(0.6f);      //09.2.1 - despues de ejecutarse lo anterior esperar 0.6 segundos para continuar
 
         //11.4 - eliminamos la variable foundMatches ya no se va a necesitar (09.2.2)
@@ -219,6 +220,48 @@ public class Board : MonoBehaviour
 
         List<int> columns = GetColumns(piecesToClear);      //11.6.2 - se obtienen las columnas en las que se eliminan las piezas y se llama la funcion "GetColumns"
         List<Piece> collapsedPieces =  collapseColumns(columns, 0.3f);       //11.6.3 - nos devuelve las piezas que se movieron y se llama a la funcion encargada de colapsar las piezas
+        FindMatchRecursively(collapsedPieces);      //12.1 - llama la funcion que recibe todas las piezas que se movieron cuado fueron colapsadas
+    }
+
+    private void FindMatchRecursively(List<Piece> collapsedPieces)      //12.2 - Funcion
+    {
+        StartCoroutine(FindMatchRecursivelyCoroutine(collapsedPieces));     //12.2.1 - se inicializa la coroutine
+    }
+
+    IEnumerator FindMatchRecursivelyCoroutine(List<Piece> collapsedPieces)      //12.3 - 
+    {
+        yield return new WaitForSeconds(1f);  //12.3.1 - le pido que espere 1 segundo
+        List<Piece> newMatches = new List<Piece>();     //12.3.2 - creo una nueva lista
+        collapsedPieces.ForEach(piece =>
+        {
+            var matches = GetMatchByPiece(piece.x, piece.y, 3);     //12.3.2.1 - verificamos si las  nuevas piezas tienen nuevo matches
+            if(matches != null)     //12.3.2.2 - si conseguimos matches
+            {
+                newMatches = newMatches.Union(matches).ToList();        //12.3.2.2.1 - agregamos estos matches a la lista de newMatches
+                ClearPieces(matches);       //12.3.2.2.2 - se eliminian las nuevas piezas
+            }
+        });
+        if(newMatches.Count > 0)        //12.3.4 - al encontrar un match nuevo
+        {
+            var newCollapsedPieces = collapseColumns(GetColumns(newMatches), 0.3f);        //12.3.4.1 - se colapsan las piezas 
+            FindMatchRecursively(newCollapsedPieces);       //12.3.4.2 - se pasan nuevas piezas colapsadas y si se encuentran mas matches se vuelve a llamar la funcion
+        }
+        yield return null;      //12.3.5 - se rompe la coroutine
+    }
+
+    private List<int> GetColumns(List<Piece> piecesToClear)     //11.7 - se crea la funcion para agregar las columnas con los matches a eliminar
+    {
+        var result = new List<int>();       //11.7.1 - se crea la lista a devolver
+
+        piecesToClear.ForEach(piece =>      //11.7.2 - se realiza el ForEach sobre piecesToClear
+        {
+            if (!result.Contains(piece.x))      //11.7.2.1 - se verifica si las columnas estan en la lista
+            {
+                result.Add(piece.x);        //11.7.2.1.1 - se agregan las columnas a lista
+            }
+        });
+
+        return result;      //11.7.3 - se devuelve el resultado
     }
 
     private List<Piece> collapseColumns(List<int> columns, float timeToCollapse)    //11.8 - funcion para colapzar las piezas en las columnas
@@ -251,29 +294,14 @@ public class Board : MonoBehaviour
         }
         return movingPieces;        //11.8.3 - retornamos la lista de piezas que se movieron para terminar la funcion
     }
-
-    private List<int> GetColumns(List<Piece> piecesToClear)     //11.7 - se crea la funcion para agregar las columnas con los matches a eliminar
-    {
-        var result = new List<int>();       //11.7.1 - se crea la lista a devolver
-
-        piecesToClear.ForEach(piece =>      //11.7.2 - se realiza el ForEach sobre piecesToClear
-        {
-            if (!result.Contains(piece.x))      //11.7.2.1 - se verifica si las columnas estan en la lista
-            {
-                result.Add(piece.x);        //11.7.2.1.1 - se agregan las columnas a lista
-            }
-        });
-
-        return result;      //11.7.3 - se devuelve el resultado
-    }
-
+        
     public bool IsCloseTo(Tile start, Tile end)     //07.1 - esta funcion retorna un valor booleano y se agrega a 06.9.1
     {
-        if (Math.Abs((start.x - end.x)) == 1 && start.y == end.y)        //07.1.1 - verificacion horizontal
+        if (Math.Abs(start.x - end.x) == 1 && start.y == end.y)        //07.1.1 - verificacion horizontal
         {       
             return true;
         }
-        if (Math.Abs((start.y - end.y)) == 1 && start.x == end.x)   //07.1.2 - verificacion vertical
+        if (Math.Abs(start.y - end.y) == 1 && start.x == end.x)   //07.1.2 - verificacion vertical
         {
             return true;
         }
