@@ -15,9 +15,12 @@ using UnityEngine;
 //10 - Eliminando los matches por defecto
 //11 - Colapsando las piezas
 //12 - Match 3 combo
+//13 - Rellenando las piezas
 
 public class Board : MonoBehaviour
 {
+    public float timeBetweenPieces = 0.05f;     //13.1 - esta variable es para que las piezas no se crean al mismo tiempo, sino una despues de la otra
+
     public int width;               //01.1 - ancho de la cuadricula
     public int height;              //01.2 - alto de la cuadricula
     public GameObject tileObject;   //01.3 - objeto por defecto para cada espacio de la caudricula (empty)
@@ -44,10 +47,12 @@ public class Board : MonoBehaviour
 
         SetupBoard();               //se llama la funcion encargada de crear la cuadricula
         PositionCamera();           //se llama la funcion encargada de ajustar la camara
-        SetupPieces();              //se llama la funcion encargada poner las piezas en cada una de las posiciones de la cuadricula
+        //SetupPieces();              //se llama la funcion encargada poner las piezas en cada una de las posiciones de la cuadricula
+        StartCoroutine(SetupPieces());              //se llama la funcion encargada poner las piezas en cada una de las posiciones de la cuadricula
     }
 
-    private void SetupPieces()      //04.8 - funcion encargada de poner las piezas en cada una de las posiciones de la cuadricula
+    //private void SetupPieces()      //04.8 - funcion encargada de poner las piezas en cada una de las posiciones de la cuadricula
+    private IEnumerator SetupPieces()       //13.2 - se cambia el tipo de la funcion a IEnumerator ya que se debe esperar cada que se cree un pieza
     {
         int maxIterations = 50;     //10.5 - agragamos las variables para iterar la piezas
         int currentIteration = 0;   //10.6 - agragamos las variables para iterar las piezas
@@ -56,6 +61,25 @@ public class Board : MonoBehaviour
         {
             for (int y = 0; y < height; y++) //04.8.1.1 - alto de la cuadricula
             {
+                yield return  new WaitForSeconds(timeBetweenPieces);  //13.2.1 - se llama la variable para que determine el tiempo de espera antes de crear la siguiente pieza
+                if (Pieces[x,y] == null)        //13.2.2 - verifico si el siguiente espacion esta vacio
+                {
+                    currentIteration = 0;
+
+                    var newPiece = CreatePieceAt(x, y);     //13.2.2.1 - llamamos la funcion para crear las piezas
+
+                    while (HasPreviousMatches(x, y))     //13.2.2.2 - despues de crear la pieza (10.3) debemos verificar si tiene previous matches
+                    {
+                        ClearPieceAt(x, y);     //13.2.2.2.1 - se llama la funcion para destruir la pieza
+                        newPiece = CreatePieceAt(x, y);     //13.2.2.2.2 - se crea una nueva pieza
+                        currentIteration++;     //13.2.2.2.3 - hace que las iteraciones aumenten
+                        if (currentIteration > maxIterations)       //13.2.2.2.4 - si iteracion actual es mayor a la catidad maxima de iteraciones deberiamos romper el while
+                        {
+                            break;      //13.2.2.2.4.1 - se rompe el while loop
+                        }
+                    }
+                }
+
                 //10.1 - se requiere una funcion aparte para crear las piezas por lo que se elimina de aqui
                 /*var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)];   //04.8.1.1.2 - selecciona de manera aleatoria una de las piezas
                 var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity);    //04.8.1.1.3 - creamos nuestros objetos
@@ -64,7 +88,8 @@ public class Board : MonoBehaviour
                 Pieces[x, y] = o.GetComponent<Piece>(); //06.5 - se guarda la referencaia al componente de Piece que se acaba de crear dentro del arrey de 2 dimensiones de Pieces
                 Pieces[x, y].Setup(x, y, this);     //06.6 - se accede al componente que acabamos de guardar*/
 
-                currentIteration = 0;
+                //13.3 - tomamos todo este codigo y lo pegamos en 13.2.2
+                /*currentIteration = 0;
 
                 var newPiece = CreatePieceAt(x, y);     //10.3 - llamamos la funcion para crear las piezas
 
@@ -77,15 +102,19 @@ public class Board : MonoBehaviour
                     {
                         break;      //10.7.4.1 - se rompe el while loop
                     }
-                }
+                }*/
             }
         }
+        yield return null;      //13.3 - para cuando se termine de ejecutar la coroutina se limpie de memoria  
     }
 
     private void ClearPieceAt(int x, int y)     //10.8 - funcion para borra la pieza del previous matches
     {
         var pieceToClear = Pieces[x, y];        //10.8.1 - obtenemos la referencia
-        Destroy(pieceToClear.gameObject);      //10.8.2 - destruimos el gameobject
+
+        //Destroy(pieceToClear.gameObject);      //10.8.2 - destruimos el gameobject
+        pieceToClear.Remove(true);              //14.4 - llamamos la runcion Remove
+
         Pieces[x, y] = null;                   //10.8.3 - actualizamos el arrey de dos dimensiones de piezas
 
     }
@@ -93,10 +122,14 @@ public class Board : MonoBehaviour
     private Piece CreatePieceAt(int x, int y)       //10.2 - se crea una funcion nueva para crear las piezas
     {
         var selectedPiece = availablePieces[UnityEngine.Random.Range(0, availablePieces.Length)];   //04.8.1.1.2 - selecciona de manera aleatoria una de las piezas
-        var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity);    //04.8.1.1.3 - creamos nuestros objetos
+
+        //var o = Instantiate(selectedPiece, new Vector3(x, y, -5), Quaternion.identity);    //04.8.1.1.3 - creamos nuestros objetos
+        var o = Instantiate(selectedPiece, new Vector3(x, y+1, -5), Quaternion.identity);    //14.4 - creamos nuestros objetos un lugar arriba
+
         o.transform.parent = transform;     //04.8.1.1.4 - hacer que el padre del objeto sea la board
         Pieces[x, y] = o.GetComponent<Piece>(); //06.5 - se guarda la referencaia al componente de Piece que se acaba de crear dentro del arrey de 2 dimensiones de Pieces
         Pieces[x, y].Setup(x, y, this);     //06.6 - se accede al componente que acabamos de guardar
+        Pieces[x, y].Move(x, y);        //14.5 - le digo a la pieza que regurese a su lugar de destino des pues de 14.4
         return Pieces[x, y];       //10.2.1 - retornamos la pieza que esta en esa posicion "x" y "y"
     }
 
@@ -130,21 +163,37 @@ public class Board : MonoBehaviour
     
     public void TileDown(Tile tile_)      //06.7 - Funcion para cuando clickeamos
     {
-        startTile = tile_;  //06.7.1 - asignar la tile inicial
+        if (!swappingPieces)        //13.5 - se verifica la variable de swappingPieces
+        {
+            startTile = tile_;      //13.5.1 - se ejecuta 
+        }
+        //startTile = tile_;  //06.7.1 - asignar la tile inicial
     }
 
     public void TileOver(Tile tile_)      //06.8 - Funcion para cuando arrastro el mouse sobre otro espacion de la cuadricula
     {
-        endTile = tile_;    //06.8.1 - asignar la tile del final  
+        if (!swappingPieces)        //13.6 - se verifica la variable de swappingPieces6
+        {
+            endTile = tile_;        //13.6.1 - se ejecuta 
+        }
+        //endTile = tile_;    //06.8.1 - asignar la tile del final  
     }
 
     public void TileUp(Tile tile_)      //06.9 - Funcion para cuando levanto el click
     {
-        if (startTile != null && endTile != null && IsCloseTo(startTile, endTile))    //06.9.1 - verifica que tengamos un starTile y un endTile
+        if (!swappingPieces)        //13.7 - se verifica la variable de swappingPieces6
+        {
+            if (startTile != null && endTile != null && IsCloseTo(startTile, endTile))    //13.7.1 - verifica que tengamos un starTile y un endTile
+            {
+                StartCoroutine(SwapTiles());       //cambiamos la forma de de llamar ya que ahora es una coroutina
+            }
+        }
+                
+        /*if (startTile != null && endTile != null && IsCloseTo(startTile, endTile))    //06.9.1 - verifica que tengamos un starTile y un endTile
         {
             //SwapTiles();    //se llama la funcion encargada de actializar la funcion del sistema de coordenadas [,] y de llamar la funcion de Move
             StartCoroutine(SwapTiles());       //cambiamos la forma de de llamar ya que ahora es una coroutina
-        }
+        }*/
         //06.9.2 - se reinician los valores despues del movimiento
         //startTile = null; //09 se lleva a SwapTiles a 09.2.8
         //endTile = null;   //09 se lleva a SwapTiles a 09.2.8
@@ -153,6 +202,8 @@ public class Board : MonoBehaviour
     //private void SwapTiles()    //06.10 - actializa la funcion del sistema de coordenadas [,] y de llamar la funcion de Move
     IEnumerator SwapTiles()     //09.2 - la cambiamos porque ahora necesitamos que mueva las piezas y espere a que las piezas terminen de moverse, busque los matches y envie el resultado, si no fuera IEnumerator todo pasaria instantaneamente y el jugador no podria verlo
     {
+        swappingPieces = true;      //13.8 - si todo se da para comenzar el proceso se pone true
+
         var StarPiece = Pieces[startTile.x, startTile.y];  //06.10.1 - referencia a la pieza inicial
         var EndPiece = Pieces[endTile.x, endTile.y];        //06.10.2 - referencia a la pieza final
         
@@ -232,19 +283,25 @@ public class Board : MonoBehaviour
     {
         yield return new WaitForSeconds(1f);  //12.3.1 - le pido que espere 1 segundo
         List<Piece> newMatches = new List<Piece>();     //12.3.2 - creo una nueva lista
-        collapsedPieces.ForEach(piece =>
+        collapsedPieces.ForEach(piece =>        //12.3.3 - 
         {
-            var matches = GetMatchByPiece(piece.x, piece.y, 3);     //12.3.2.1 - verificamos si las  nuevas piezas tienen nuevo matches
-            if(matches != null)     //12.3.2.2 - si conseguimos matches
+            var matches = GetMatchByPiece(piece.x, piece.y, 3);     //12.3.3.1 - verificamos si las  nuevas piezas tienen nuevo matches
+            if(matches != null)     //12.3.3.2 - si conseguimos matches
             {
-                newMatches = newMatches.Union(matches).ToList();        //12.3.2.2.1 - agregamos estos matches a la lista de newMatches
-                ClearPieces(matches);       //12.3.2.2.2 - se eliminian las nuevas piezas
+                newMatches = newMatches.Union(matches).ToList();        //12.3.3.2.1 - agregamos estos matches a la lista de newMatches
+                ClearPieces(matches);       //12.3.3.2.2 - se eliminian las nuevas piezas
             }
         });
         if(newMatches.Count > 0)        //12.3.4 - al encontrar un match nuevo
         {
             var newCollapsedPieces = collapseColumns(GetColumns(newMatches), 0.3f);        //12.3.4.1 - se colapsan las piezas 
             FindMatchRecursively(newCollapsedPieces);       //12.3.4.2 - se pasan nuevas piezas colapsadas y si se encuentran mas matches se vuelve a llamar la funcion
+        }
+        else        //13.4 - si la cuenta no es mayor a cero
+        {
+            yield return new WaitForSeconds(0.1f);      //13.4.1 - esperamos para volver a llamar las piezas
+            StartCoroutine(SetupPieces());      //13.4.2 - se vuelven a crear las piezas
+            swappingPieces = false;     //13.8 -  se bloquea al jugador de hacer input mientras esta en proceso llenado y movimiento de la cuadricula para evitar errores
         }
         yield return null;      //12.3.5 - se rompe la coroutine
     }
