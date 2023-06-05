@@ -152,6 +152,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 004a11684d15ce941a303608cbaefc11, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  timeBetweenPieces: 0.01
   width: 6
   height: 10
   tileObject: {fileID: 5916905007339323930, guid: 05eebd4431da2ed469d8e4d53ec8df62, type: 3}
@@ -162,6 +163,12 @@ MonoBehaviour:
   - {fileID: 6488271773194092811, guid: bdd9fe58c13281a498676b79fd780175, type: 3}
   - {fileID: 1865199345860934519, guid: 39f75ff5a5836124e95fe6a7427a54d8, type: 3}
   - {fileID: 2802550018307069548, guid: 761e970946701144ba3c52b3b78f19dd, type: 3}
+  - {fileID: 5991590630177057596, guid: 066bcc4d72169614ab53df3980be4472, type: 3}
+  - {fileID: 4666121562758783424, guid: 304b8ae25e890fc4cab05c5c35078a5e, type: 3}
+  - {fileID: 1021404253304718708, guid: bf68a116c750a204aa409ef5d6934a93, type: 3}
+  - {fileID: 9066266662489220396, guid: 2c7d6433ab172424db9a1ba587bd632a, type: 3}
+  - {fileID: 568497318165846558, guid: a10423caea366c1499db45353ab76582, type: 3}
+  - {fileID: 2145710051789098862, guid: 0cfafcf7acfc51344906750ed4682e20, type: 3}
 --- !u!4 &490252604
 Transform:
   m_ObjectHideFlags: 0
